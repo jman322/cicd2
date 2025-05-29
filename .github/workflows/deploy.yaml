@@ -28,13 +28,13 @@ jobs:
 
       - name: Log in to Amazon ECR
         run: |
-        aws ecr get-login-password --region ${{secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECU_REPO_URI }}
+        aws ecr get-login-password --region ${{secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPO_URI }}
 
       - name: Build Docker image
         run: docker build -t ci-cd-app .
         
       - name: Tag image for ECR
-        run: docker tag ci-cd-app:latest ${{ secrets.ECU_REPO_URI }}:latest
+        run: docker tag ci-cd-app:latest ${{ secrets.ECR_REPO_URI }}:latest
 
       - name: Push image to ECT
-        run: docker push ${{ secrets.ECU_REPO_URI }}:latest
+        run: docker push ${{ secrets.ECR_REPO_URI }}:latest
