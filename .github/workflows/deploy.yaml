@@ -2,7 +2,7 @@ name: Build and Push Containers to AWS ECR
 
 on:
   workflow_run:
-    workflow: ["Run Tests"]
+    workflows: ["Run Tests"]
     types:
       - completed
 
