@@ -39,3 +39,10 @@ jobs:
 
       - name: Push image to ECR
         run: docker push ${{ secrets.ECR_REPO_URI }}:latest
+
+      - name: Deploy to ECS Fargate
+        run: |
+          aws ecs update-service \
+          --cluster earnest-hamster-mu4p05 \
+          --service ci-cd-task-definition-service-znkpogod \
+          --force-new-deployment
