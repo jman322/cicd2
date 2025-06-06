@@ -6,18 +6,22 @@ on:
     types:
       - completed
 
-
-
 jobs:
   build-and-push:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.2.2
-      
+
+      # CUSTOM LOGGING ACTION 1: Log deployment start
+      - name: Log Deployment Start
+        run: |
+          echo "$(date): Deployment started for commit ${{ github.sha }}" >> deployment.log
+          echo "Workflow: ${{ github.workflow }}" >> deployment.log
+          echo "Trigger: ${{ github.event_name }}" >> deployment.log
+          echo "---" >> deployment.log
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4.1.0
@@ -26,19 +30,39 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      # CUSTOM LOGGING ACTION 2: Log AWS login
+      - name: Log AWS Configuration
+        run: |
+          echo "$(date): AWS credentials configured for region ${{ secrets.AWS_REGION }}" >> deployment.log
+
       - name: Log in to Amazon ECR
         run: |
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
           docker login --username AWS --password-stdin ${{ secrets.ECR_REPO_URI }}
 
+      # CUSTOM LOGGING ACTION 3: Log ECR login
+      - name: Log ECR Login Success
+        run: |
+          echo "$(date): Successfully logged into ECR" >> deployment.log
+
       - name: Build Docker image
         run: docker build -t ci-cd-app .
         
+      # CUSTOM LOGGING ACTION 4: Log Docker build
+      - name: Log Docker Build
+        run: |
+          echo "$(date): Docker image built successfully" >> deployment.log
+
       - name: Tag image for ECR
         run: docker tag ci-cd-app:latest ${{ secrets.ECR_REPO_URI }}:latest
 
       - name: Push image to ECR
         run: docker push ${{ secrets.ECR_REPO_URI }}:latest
+
+      # CUSTOM LOGGING ACTION 5: Log image push
+      - name: Log Image Push
+        run: |
+          echo "$(date): Docker image pushed to ECR successfully" >> deployment.log
 
       - name: Deploy to ECS Fargate
         run: |
@@ -46,3 +70,25 @@ jobs:
           --cluster earnest-hamster-mu4p05 \
           --service ci-cd-task-definition-service-znkpogod \
           --force-new-deployment
+
+      # CUSTOM LOGGING ACTION 6: Log deployment completion
+      - name: Log Deployment Success
+        run: |
+          echo "$(date): ECS service updated successfully" >> deployment.log
+          echo "$(date): Deployment completed successfully" >> deployment.log
+          echo "Commit: ${{ github.sha }}" >> deployment.log
+          echo "===============================================" >> deployment.log
+
+      # CUSTOM LOGGING ACTION 7: Upload logs to S3 (Your bucket!)
+      - name: Upload Deployment Logs to S3
+        run: |
+          # Upload the deployment log to your S3 bucket
+          aws s3 cp deployment.log s3://cicdlogging25624/deployment-logs/deployment-$(date +%Y-%m-%d-%H-%M-%S).log
+          echo "Deployment logs uploaded to S3 bucket"
+
+      # CUSTOM LOGGING ACTION 8: Display log summary
+      - name: Display Deployment Log Summary
+        run: |
+          echo "=== DEPLOYMENT LOG SUMMARY ==="
+          cat deployment.log
+          echo "=== LOG UPLOADED TO S3 ==="
