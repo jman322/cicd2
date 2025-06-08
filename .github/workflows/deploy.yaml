@@ -48,7 +48,7 @@ jobs:
       - name: Build Docker image
         run: docker build -t ci-cd-app .
         
-      # CUSTOM LOGGING ACTION 4: Log Docker build
+      # CUSTOM LOGGING ACTION 4: Log Docker build process 
       - name: Log Docker Build
         run: |
           echo "$(date): Docker image built successfully" >> deployment.log
